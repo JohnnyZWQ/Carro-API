@@ -43,11 +43,11 @@ public class CarModel {
         this.id = id;
     }
 
-    public UUID getIdJogo() {
+    public UUID getIdCarro() {
         return idCarro;
     }
 
-    public void setIdJogo(UUID idCarro) {
+    public void setIdCarro(UUID idCarro) {
         this.idCarro = idCarro;
     }
 }

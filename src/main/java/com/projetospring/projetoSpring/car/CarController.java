@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -45,19 +46,37 @@ public class CarController {
      * Endpoint GET para listar todos os carros cadastrados.
      * @return Lista com todos os carros do banco.
      */
-    @GetMapping("/listar")
+    @GetMapping("/listarCar")
     public List<CarModel> listarCarros() {
         List<CarModel> carrosCadastrados = carRepository.findAll();
         return carrosCadastrados;
     }
 
     /**
-     * Endpoint PUT para atualizar os dados de um carro.
+     * Endpoint PUT para atualizar os dados de um carro existente.
+     * Só atualiza se o carro existir, e a senha será recriptografada.
      */
-    @PutMapping("/atualizar")
-    public ResponseEntity atualizarCarro(@RequestBody CarModel carModel) {
-        var atualizado = this.carRepository.save(carModel);
-        return ResponseEntity.status(HttpStatus.CREATED).body(atualizado);
+    @PutMapping("/atualizar/{id}")
+    public ResponseEntity atualizarCarro(@PathVariable UUID id, @RequestBody CarModel carModel) {
+        Optional<CarModel> carroExistente = carRepository.findById(id);
+
+        if (carroExistente.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Carro não encontrado");
+        }
+
+        CarModel carroAtual = carroExistente.get();
+
+        carroAtual.setNome(carModel.getNome());
+
+        // Criptografa a nova senha apenas se foi alterada
+        if (!carModel.getSenha().isBlank()) {
+            var senhaHash = BCrypt.withDefaults()
+                    .hashToString(12, carModel.getSenha().toCharArray());
+            carroAtual.setSenha(senhaHash);
+        }
+
+        var atualizado = carRepository.save(carroAtual);
+        return ResponseEntity.status(HttpStatus.OK).body(atualizado);
     }
 
     /**
